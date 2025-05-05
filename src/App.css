@@ -1,38 +1,80 @@
-.App {
-  text-align: center;
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* General Layout */
+.app-container {
+  display: flex;
+  height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #ebeae5;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: flex-start;
+  padding: 20px;
+  height: 100%;
+}
+
+/* Logo styling */
+.logo-container {
+  margin-bottom: 20px; /* Space between logo and menu */
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.logo {
+  height: 50px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Navigation buttons */
+.menu button {
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  border: none;
+  background-color: #ddd;
+  cursor: pointer;
+}
+
+.menu button:hover {
+  background-color: #ccc;
+}
+
+/* Main content area */
+.content {
+  flex: 1;
+  padding: 20px;
+  background-color: #eaeaea;
+}
+
+/* Styling for each section */
+.content > div {
+  padding: 10px;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Styling for the Embedded Content */
+#homepage {
+  height: 90vh;
+}
+
+#learning-container {
+  height: 90vh;
+}
+
+#dashboard {
+  height: 90vh;
+}
+
+#agent {
+  height: 90vh;
 }

@@ -1,25 +1,58 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
 import './App.css';
+import logo from './logo.png'; // Import logo
+import Homepage from './components/homepage'
+import DashboardEmbed from './components/dashboard';
+import AgenticEmbed from './components/agentic';
+import LearningCentre from './components/learning';
+import {
+  AuthType,
+  init
+}
+from '@thoughtspot/visual-embed-sdk';
 
-function App() {
+init({
+  thoughtSpotHost: "https://thoughtspotpmm.thoughtspot.cloud/",
+  authType: AuthType.Basic,
+  username: "retailapparelanalyst",
+  password: "PMM$.data",
+  callPrefetch: true 
+});
+
+const App = () => {
+  const [activeSection, setActiveSection] = useState('home'); // Default section is 'home'
+
+  const handleMenuClick = (section) => {
+    setActiveSection(section);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app-container">
+      {/* Sidebar */}
+      <div className="sidebar">
+        {/* Logo */}
+        <div className="logo-container">
+          <img src={logo} alt="FPL Manager Logo" className="logo" />
+        </div>
+
+        {/* Navigation Links */}
+        <div className="menu">
+          <button onClick={() => handleMenuClick('home')}>Home</button>
+          <button onClick={() => handleMenuClick('learning')}>Learning Centre</button>
+          <button onClick={() => handleMenuClick('dashboard')}>Dashboard</button>
+          <button onClick={() => handleMenuClick('fplAgent')}>FPL Agent</button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="content">
+        {activeSection === 'home' && <Homepage />}
+        {activeSection === 'learning' && <LearningCentre />}
+        {activeSection === 'dashboard' && <DashboardEmbed />}
+        {activeSection === 'fplAgent' && <AgenticEmbed />}
+      </div>
     </div>
   );
-}
+};
 
 export default App;
