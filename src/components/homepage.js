@@ -1,22 +1,40 @@
-import React from 'react';
+import '../css/HomePage.css';
+import React, { useState, useEffect } from 'react';
 
-const Homepage = () => {
+const HomePage = () => {
+  const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
+
+  useEffect(() => {
+    // Fetch data from API and update the state
+    const fetchData = async () => {
+      try {
+        const response = await fetch('https://api.example.com/fpl-data'); // Replace with your actual API URL
+        const result = await response.json();
+
+        // Update the state with data from the API
+        setData({
+          square1: result.square1,  // Update based on actual data structure
+          square2: result.square2,
+          square3: result.square3
+        });
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData(); // Fetch data when the component mounts
+  }, []); // Empty dependency array to run only once when the component mounts
+
   return (
-    <div id="homepage">
-      <iframe 
-        title="Mailchimp newsletter" 
-        src="https://mailchi.mp/53b7274bea21/callice-court-weekly-fpl-newsletter-26085" 
-        style={{ 
-          width: '100%', 
-          height: '100vh', 
-          border: 'none' 
-        }}
-        allowFullScreen
-      />
+    <div className="homepage">
+      <div className="grid-container">
+        <div className="square">{data.square1}</div>
+        <div className="square">{data.square2}</div>
+        <div className="square">{data.square3}</div>
+        <div className="large-box">Large Box Content</div>
+      </div>
     </div>
   );
 };
 
-export default Homepage;
-
-
+export default HomePage;

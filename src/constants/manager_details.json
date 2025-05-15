@@ -1,0 +1,84 @@
+{
+    "league_entries": [
+        {
+            "entry_id": 33485,
+            "entry_name": "Hawk Tuanzebe",
+            "id": 33551,
+            "joined_time": "2024-07-19T18:00:55.768372Z",
+            "player_first_name": "James",
+            "player_last_name": "Naylor",
+            "short_name": "JN",
+            "waiver_pick": 5
+        },
+        {
+            "entry_id": 106684,
+            "entry_name": "You all Doughty-d me",
+            "id": 107067,
+            "joined_time": "2024-07-30T13:16:08.814133Z",
+            "player_first_name": "Amar",
+            "player_last_name": "Gohil",
+            "short_name": "AG",
+            "waiver_pick": 6
+        },
+        {
+            "entry_id": 107531,
+            "entry_name": "The Notorious B.L.T",
+            "id": 107914,
+            "joined_time": "2024-07-30T15:15:37.272322Z",
+            "player_first_name": "Ben",
+            "player_last_name": "Trundley",
+            "short_name": "BT",
+            "waiver_pick": 2
+        },
+        {
+            "entry_id": 108802,
+            "entry_name": "Palmer Violets",
+            "id": 109192,
+            "joined_time": "2024-07-30T18:33:10.849636Z",
+            "player_first_name": "Scott",
+            "player_last_name": "Holt",
+            "short_name": "SH",
+            "waiver_pick": 4
+        },
+        {
+            "entry_id": 199052,
+            "entry_name": "Yoro Wizard Harry",
+            "id": 200109,
+            "joined_time": "2024-08-08T13:36:40.581319Z",
+            "player_first_name": "Scott",
+            "player_last_name": "Sutherland",
+            "short_name": "SS",
+            "waiver_pick": 3
+        },
+        {
+            "entry_id": 394219,
+            "entry_name": "W’s only",
+            "id": 398206,
+            "joined_time": "2024-08-15T09:09:35.377872Z",
+            "player_first_name": "Joel",
+            "player_last_name": "Attah",
+            "short_name": "JA",
+            "waiver_pick": 8
+        },
+        {
+            "entry_id": 400398,
+            "entry_name": "Cahilifonia Dreamin’",
+            "id": 404454,
+            "joined_time": "2024-08-15T11:45:00.039394Z",
+            "player_first_name": "charlie",
+            "player_last_name": "birch",
+            "short_name": "cb",
+            "waiver_pick": 7
+        },
+        {
+            "entry_id": 421000,
+            "entry_name": "Turkish De Ligt",
+            "id": 425325,
+            "joined_time": "2024-08-15T18:04:19.821528Z",
+            "player_first_name": "Karan",
+            "player_last_name": "Verma",
+            "short_name": "KV",
+            "waiver_pick": 1
+        }
+    ]
+}
