@@ -12,7 +12,7 @@ const HomePage = () => {
     const fetchData = async () => {
       
       try {
-        const response = await fetch('https://draft.premierleague.com/api/league/10866/details'); // Replace with your actual API URL
+        const response = await fetch('https://draft.premierleague.com/api/league/10866/details', { cache: 'no-store' }); // Replace with your actual API URL
         const result = await response.json();
         console.log("result")
         
