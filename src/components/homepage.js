@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 const HomePage = () => {
   const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
-  const base_url = 'https://draft.premierleague.com/'
-  const league_id = '10866'
-  const manager_id = '404454'
+  // const base_url = 'https://draft.premierleague.com/'
+  // const league_id = '10866'
+  // const manager_id = '404454'
 
   useEffect(() => {
     console.log("HOMEPAGE LOADED AGAIN")
