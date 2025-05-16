@@ -8,6 +8,7 @@ const HomePage = () => {
   const league_id = '10866'
 
   useEffect(() => {
+    console.log("HOMEPAGE LOADED")
     // Fetch data from API and update the state
     const fetchData = async () => {
       
