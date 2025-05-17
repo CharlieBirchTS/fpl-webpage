@@ -16,7 +16,7 @@ const HomePage = () => {
       try {
         // have to use a proxy to bypass CORS, proxy added to package.json file
         // This will need amending when hosting on Vercel, this only works for localhost right now
-        const response = await fetch(`/api/league/${league_id}/details`);
+        const response = await fetch(`/api/proxy/league/${league_id}/details`);
         const result = await response.json();
         const standings = result.standings;
 
