@@ -24,6 +24,7 @@ init({
 
 const App = () => {
   const [activeSection, setActiveSection] = useState('home'); // Default section is 'home'
+  const [selectedManager, setSelectedManager] = useState(null);
 
   const handleMenuClick = (section) => {
     setActiveSection(section);
@@ -36,7 +37,7 @@ const App = () => {
         <div className="logo-container">
           <img src={logo} alt="Logo" className="logo" />
         </div>
-          <Dropdown />
+          <Dropdown onSelect={setSelectedManager}/>
           {/* Navigation Links */}
           <div className="menu">
             <button onClick={() => handleMenuClick('home')}>Home</button>
@@ -48,7 +49,7 @@ const App = () => {
 
       {/* Main Content Area */}
       <div className="content">
-        {activeSection === 'home' && <Homepage />}
+        {activeSection === 'home' && <Homepage selectedManager={Number(selectedManager)}/>}
         {activeSection === 'learning' && <LearningCentre />}
         {activeSection === 'dashboard' && <DashboardEmbed />}
         {activeSection === 'fplAgent' && <AgenticEmbed />}

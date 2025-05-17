@@ -1,18 +1,22 @@
 import '../css/HomePage.css';
 import React, { useState, useEffect } from 'react';
 
-const HomePage = () => {
+const HomePage = ( {selectedManager} ) => {
   const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
   // const base_url = 'https://draft.premierleague.com/'
   const league_id = '10866'
-  const manager_id = 404454
+
+  console.log("manager_id received in HomePage:", selectedManager);
 
   useEffect(() => {
-    console.log("HOMEPAGE LOADED AGAIN")
+    if (!selectedManager) return; // Don’t fetch until we have a manager ID
+
+    console.log("HOMEPAGE LOADED AGAIN for manager:", selectedManager);
+
     // Fetch data from API and update the state
     const fetchData = async () => {
-      
+
       try {
         // have to use a proxy to bypass CORS, proxy added to package.json file
         // This will need amending when hosting on Vercel, this only works for localhost right now
@@ -20,7 +24,12 @@ const HomePage = () => {
         const result = await response.json();
         const standings = result.standings;
 
-        const team = standings.find(team => team.league_entry === manager_id);
+        const team = standings.find(team => team.league_entry === selectedManager);
+
+        if (!team) {
+          console.warn("Manager not found");
+          return;
+        }
 
         const league_position = team.last_rank
         const league_points = team.total
@@ -43,7 +52,7 @@ const HomePage = () => {
     };
 
     fetchData(); // Fetch data when the component mounts
-  }, []); // Empty dependency array to run only once when the component mounts
+  }, [selectedManager]); // Empty dependency array to run only once when the component mounts
 
   return (
     <div className="homepage">
