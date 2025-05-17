@@ -5,8 +5,8 @@ const HomePage = () => {
   const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
   // const base_url = 'https://draft.premierleague.com/'
-  // const league_id = '10866'
-  // const manager_id = '404454'
+  const league_id = '10866'
+  const manager_id = 404454
 
   useEffect(() => {
     console.log("HOMEPAGE LOADED AGAIN")
@@ -16,11 +16,11 @@ const HomePage = () => {
       try {
         // have to use a proxy to bypass CORS, proxy added to package.json file
         // This will need amending when hosting on Vercel, this only works for localhost right now
-        const response = await fetch('/api/league/10866/details');
+        const response = await fetch(`/api/league/${league_id}/details`);
         const result = await response.json();
         const standings = result.standings;
 
-        const team = standings.find(team => team.league_entry === 404454);
+        const team = standings.find(team => team.league_entry === manager_id);
 
         const league_position = team.last_rank
         const league_points = team.total
