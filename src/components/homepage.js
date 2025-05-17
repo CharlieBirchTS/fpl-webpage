@@ -1,18 +1,16 @@
 import '../css/HomePage.css';
+import LiveFixtures from './LiveFixtures';
 import React, { useState, useEffect } from 'react';
 
 const HomePage = ( {selectedManager} ) => {
   const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
-  // const base_url = 'https://draft.premierleague.com/'
   const league_id = '10866'
-
-  console.log("manager_id received in HomePage:", selectedManager);
 
   useEffect(() => {
     if (!selectedManager) return; // Don’t fetch until we have a manager ID
 
-    console.log("HOMEPAGE LOADED AGAIN for manager:", selectedManager);
+    console.log("HOMEPAGE LOADED with manager:", selectedManager, " selected");
 
     // Fetch data from API and update the state
     const fetchData = async () => {
@@ -60,7 +58,9 @@ const HomePage = ( {selectedManager} ) => {
         <div className="square">{data.square1}</div>
         <div className="square">{data.square2}</div>
         <div className="square">{data.square3}</div>
-        <div className="large-box">Large Box Content</div>
+        <div className="large-box">
+          <LiveFixtures />
+        </div>
       </div>
     </div>
   );
