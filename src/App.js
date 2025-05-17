@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import './App.css';
+import './css/App.css';
 import logo from './logo.png'; // Import logo
+import Dropdown from './components/dropdown'
 import Homepage from './components/homepage'
 import DashboardEmbed from './components/dashboard';
 import AgenticEmbed from './components/agentic';
 import LearningCentre from './components/learning';
+
+
 import {
   AuthType,
   init
@@ -30,18 +33,17 @@ const App = () => {
     <div className="app-container">
       {/* Sidebar */}
       <div className="sidebar">
-        {/* Logo */}
         <div className="logo-container">
-          <img src={logo} alt="FPL Manager Logo" className="logo" />
+          <img src={logo} alt="Logo" className="logo" />
         </div>
-
-        {/* Navigation Links */}
-        <div className="menu">
-          <button onClick={() => handleMenuClick('home')}>Home</button>
-          <button onClick={() => handleMenuClick('learning')}>Learning Centre</button>
-          <button onClick={() => handleMenuClick('dashboard')}>Dashboard</button>
-          <button onClick={() => handleMenuClick('fplAgent')}>FPL Agent</button>
-        </div>
+          <Dropdown />
+          {/* Navigation Links */}
+          <div className="menu">
+            <button onClick={() => handleMenuClick('home')}>Home</button>
+            <button onClick={() => handleMenuClick('learning')}>Learning Centre</button>
+            <button onClick={() => handleMenuClick('dashboard')}>Dashboard</button>
+            <button onClick={() => handleMenuClick('fplAgent')}>FPL Agent</button>
+          </div>
       </div>
 
       {/* Main Content Area */}
