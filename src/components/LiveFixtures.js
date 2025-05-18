@@ -1,83 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import managersData from '../constants/manager_details.json';
+import '../css/LiveFixtures.css'
 
 const LiveFixtures = () => {
-  const [currentGW, setCurrentGW] = useState(null);
-  const [livePoints, setLivePoints] = useState({});
-  const [fixtures, setFixtures] = useState([]);
+    const [currentGW, setCurrentGW] = useState(null);
+    const [fixtures, setFixtures] = useState([]);
+    const [gameweekFinished, setGameweekFinished] = useState(null);
+    const leagueId = '10866'
 
-  // Fetch gameweek
-  useEffect(() => {
-    const fetchGameweek = async () => {
-      const res = await fetch('/api/proxy/game');
-      const json = await res.json();
-      setCurrentGW(json.current_event);
-      console.log("The current GW is:", currentGW)
-    };
-    fetchGameweek();
-  }, []);
+    // Fetch gameweek
+    useEffect(() => {
+        const fetchGameweek = async () => {
+            const res = await fetch('/api/proxy/game');
+            const json = await res.json();
 
+            setCurrentGW(json.current_event);
+            setGameweekFinished(json.current_event_finished)
+        };
+        fetchGameweek();
+    }, []);
 
+    // Fetch current GW fixtures for managers
+    useEffect(() => {
+        if (!currentGW) return;
+        const fetchCurrentManagerFixtures = async () => {
+            try {
+                const res = await fetch(`/api/proxy/league/${leagueId}/details`);
+                const json = await res.json();
 
-  // Fetch live points
-  useEffect(() => {
-    if (!currentGW) return;
+                const currentWeekFixtures = json.matches.filter(
+                    match => match.event === currentGW
+                );
 
-    const fetchLivePoints = async () => {
-      const res = await fetch(`/api/proxy/event/${currentGW}/live`);
-      const json = await res.json();
-      const live = {};
-      json.elements.forEach(player => {
-        live[player.id] = player.stats.total_points;
-      });
-      setLivePoints(live);
-    };
+                setFixtures(currentWeekFixtures);
+            } catch (error) {
+                console.error('Error fetching fixtures:', error);
+            }
+        };
 
-    fetchLivePoints();
-  }, [currentGW]);
+        fetchCurrentManagerFixtures();
+    }, [currentGW]);
 
-  // Build fixtures
-  useEffect(() => {
-    if (!currentGW || Object.keys(livePoints).length === 0) return;
+    // Create a lookup from entry ID to team name
+    const entryIdToName = {};
+    managersData.league_entries.forEach(manager => {
+        entryIdToName[manager.id] = manager.entry_name;
+    });
 
-    const managerList = managersData.league_entries;
-    const fixturesList = [];
-
-    for (let i = 0; i < managerList.length; i += 2) {
-      const managerA = managerList[i];
-      const managerB = managerList[i + 1];
-
-      fixturesList.push({
-        home: {
-          name: managerA.entry_name,
-          points: livePoints[managerA.entry_id] || 0,
-        },
-        away: {
-          name: managerB.entry_name,
-          points: livePoints[managerB.entry_id] || 0,
-        }
-      });
-    }
-
-    setFixtures(fixturesList);
-  }, [currentGW, livePoints]);
-
-  return (
-    <div>
-      <h3>Live Matchups</h3>
-      {fixtures.length === 0 ? (
-        <p>Loading fixtures...</p>
-      ) : (
-        <ul>
-          {fixtures.map((fixture, index) => (
-            <li key={index}>
-              {fixture.home.name} ({fixture.home.points}) vs {fixture.away.name} ({fixture.away.points})
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+    return (
+        <div className="fixtures-section">
+            <div className="fixtures-header">
+                {gameweekFinished !== null && (
+                    <span className={`status ${gameweekFinished ? 'finished' : 'live'}`}>
+                        {gameweekFinished ? '🔴 Gameweek Finished' : '🟢 Live Gameweek'}
+                    </span>
+                )}
+                <h3 className="fixtures-title">Live Scores</h3>
+            </div>
+            {fixtures.length === 0 ? (
+                <p>Loading fixtures...</p>
+            ) : (
+                <div className="fixtures-grid">
+                    {fixtures.map((fixture, index) => (
+                        <div className="row" key={index}>
+                            <span>{entryIdToName[fixture.league_entry_1]}</span>
+                            <span>{fixture.league_entry_1_points ?? '-'}</span>
+                            <span>{fixture.league_entry_2_points ?? '-'}</span>
+                            <span>{entryIdToName[fixture.league_entry_2]}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default LiveFixtures;
