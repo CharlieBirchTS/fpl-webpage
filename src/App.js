@@ -8,19 +8,19 @@ import AgenticEmbed from './components/agentic';
 import H2H from './components/H2H';
 
 
-import {
-  AuthType,
-  init
-}
-  from '@thoughtspot/visual-embed-sdk';
+// import {
+//   AuthType,
+//   init
+// }
+//   from '@thoughtspot/visual-embed-sdk';
 
-init({
-  thoughtSpotHost: "https://thoughtspotpmm.thoughtspot.cloud/",
-  authType: AuthType.Basic,
-  username: "retailapparelanalyst",
-  password: "PMM$.data",
-  callPrefetch: true
-});
+// init({
+//   thoughtSpotHost: "https://thoughtspotpmm.thoughtspot.cloud/",
+//   authType: AuthType.Basic,
+//   username: "retailapparelanalyst",
+//   password: "PMM$.data",
+//   callPrefetch: true
+// });
 
 const App = () => {
   const leagueId = '10866'
@@ -86,7 +86,7 @@ const App = () => {
         {/* Navigation Links */}
         <div className="menu">
           <button onClick={() => handleMenuClick('home')}>Home</button>
-          {/* <button onClick={() => handleMenuClick('h2h')}>H2H</button> */}
+          <button onClick={() => handleMenuClick('h2h')}>H2H</button>
           {/* <button onClick={() => handleMenuClick('dashboard')}>Dashboard</button>
           <button onClick={() => handleMenuClick('fplAgent')}>FPL Agent</button> */}
         </div>
@@ -98,8 +98,10 @@ const App = () => {
           currentGW={currentGW}
           gameweekFinished={gameweekFinished}
           fixtures={fixtures} />)}
-        {/* {activeSection === 'h2h' && (<H2H currentGW={currentGW}
-          gameweekFinished={gameweekFinished} />)} */}
+        {activeSection === 'h2h' && (<H2H currentGW={currentGW}
+          gameweekFinished={gameweekFinished}
+          fixtures={fixtures}
+          selectedManager={selectedManager} />)}
         {/* {activeSection === 'dashboard' && <DashboardEmbed />}
         {activeSection === 'fplAgent' && <AgenticEmbed />} */}
       </div>
