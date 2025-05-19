@@ -2,7 +2,7 @@ import '../css/HomePage.css';
 import LiveFixtures from './LiveFixtures';
 import React, { useState, useEffect } from 'react';
 
-const HomePage = ({ selectedManager }) => {
+const HomePage = ({ selectedManager, currentGW, gameweekFinished, fixtures }) => {
   const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
   const league_id = '10866'
@@ -52,7 +52,7 @@ const HomePage = ({ selectedManager }) => {
         <div className="square">{data.square2}</div>
         <div className="square">{data.square3}</div>
         <div className="large-box">
-          <LiveFixtures />
+          <LiveFixtures gameweekFinished={gameweekFinished} fixtures={fixtures} />
         </div>
       </div>
     </div>
