@@ -142,7 +142,7 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         setAwayTeamSelection(enrichedOpponentManagerSelection);
     };
 
-    // THIS IS THE ORCHESTRATOR THAT RUNS IN ORDER ASYNC 
+    // THIS IS THE ORCHESTRATOR THAT RUNS BACKEND IN ORDER ASYNC 
     const loadH2HTeams = async () => {
         try {
             // 1. Identify managers
@@ -157,6 +157,8 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
             console.error("loadH2HTeams error:", error.message)
         }
     }
+
+
 
     // Automatically fetch data when dependencies are ready
     useEffect(() => {
