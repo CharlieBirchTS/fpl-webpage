@@ -7,22 +7,21 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
     const [awayTeamSelection, setAwayTeamSelection] = useState([]);
     const [playerLivePoints, setPlayerLivePoints] = useState({});
 
-    const fetchFixturesManagers = async () => {
+    // THIS RETURNS THE DETAILS OF THE SELECTED MANAGER AND THEIR OPPONENT
+    const getFixtureManagers = (selectedManagerId) => {
         try {
             // get the details of the selected manager from prop passed from App.js
             const selectedManagerDetails = managersData.find(m => m.id === selectedManagerId)
             // check it returned something
             if (!selectedManagerDetails) {
-                console.warn(`Manager with id ${selectedManagerId} not found`);
-                return;
+                throw new Error(`❌ Manager with ID ${selectedManagerId} not found in managersData.`);
             }
 
             // return the object where the selected manager is either home or away
             const selectedManagerFixture = fixtures.find(fix => fix.league_entry_1 === selectedManagerId || fix.league_entry_2 === selectedManagerId);
             // check if something is returned
             if (!selectedManagerFixture) {
-                console.warn('No fixture found for selected manager');
-                return;
+                throw new Error(`❌ No fixture found involving manager ID ${selectedManagerId}.`);
             }
 
             // obtain opponents manager ID from fixture
@@ -33,52 +32,33 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
             // take that ID and then pull that managers details
             const opponentManagerDetails = managersData.find(m => m.id === selectedManagerOpponentId);
             if (!opponentManagerDetails) {
-                console.warn("Opponent manager not found");
-                return;
+                throw new Error(`❌ Opponent with ID ${selectedManagerOpponentId} not found in managersData.`);
             }
 
-            // put in the extra CODE HERE
-
-            // get the home and aways team selection in raw form i.e. IDs for names
-            const rawHomeTeamSelection = await fetchManagersSelection(selectedManagerDetails);
-            const rawAwayTeamSelection = await fetchManagersSelection(opponentManagerDetails);
-            // check array is returned
-            if (!Array.isArray(playersData) || playersData.length === 0) {
-                console.warn("playersData not ready when trying to enrich");
-                return;
-            }
-
-            // enrich it with full players data object passed from parent
-            const enrichedHomeTeamSelection = enrichTeamSelection(rawHomeTeamSelection);
-            const enrichedAwayTeamSelection = enrichTeamSelection(rawAwayTeamSelection);
-
-            // set the state based on final output
-            setHomeTeamSelection(enrichedHomeTeamSelection);
-            setAwayTeamSelection(enrichedAwayTeamSelection);
-
-            console.log("This is the enriched Home team:", enrichedHomeTeamSelection);
-            console.log("This is the enriched Away team:", enrichedAwayTeamSelection);
+            return { selectedManagerDetails, opponentManagerDetails };
 
         } catch (error) {
             console.error(`Error fetching matchup data:`, error)
         }
     };
 
-    const fetchManagersSelection = async (selectedManagerDetails) => {
-        if (!selectedManagerDetails || !selectedManagerDetails.entry_id || !currentGW) return;
+    // THIS RETURNS THE RAW PICKS FROM THE API FOR A SINGLE MANAGER
+    const fetchManagerSelection = async (ManagerDetails) => {
+        if (!ManagerDetails || !ManagerDetails.entry_id || !currentGW) return;
         try {
             // now run the API to get the team of the selected manager
-            const res = await fetch(`/api/proxy/entry/${selectedManagerDetails.entry_id}/event/${currentGW}`);
+            const res = await fetch(`/api/proxy/entry/${ManagerDetails.entry_id}/event/${currentGW}`);
             const json = await res.json();
             // a standard setter just stores this result as state, and if there's nothing returns empty array
             const picks = json.picks || [];
             return picks;  // ✅ also returns the data for further use
         } catch (error) {
-            console.error(`Error fetching team selection for manager ${selectedManagerDetails.entry_id}:`, error)
+            console.error(`Error fetching team selection for manager ${ManagerDetails.entry_id}:`, error)
             return [];
         }
     };
 
+    // THIS RUNS THROUGH THE EXPLAIN COMPONENT OF THE API TO GENERATE LIVE POINTS
     const calculateExplainPoints = (explainArray) => {
         if (!Array.isArray(explainArray)) return 0;
 
@@ -93,6 +73,7 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         }, 0);
     };
 
+    // THIS GETS THE RAW LIVE POINTS OBJECT FROM THE API AND MAPS LIVE POINTS TO PLAYER ID
     const fetchPlayerLivePoints = async () => {
         try {
             const res = await fetch(`/api/proxy/event/${currentGW}/live`);
@@ -113,6 +94,7 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         }
     };
 
+    // THIS MAPS THE IDS FOR TEAM AND POSITION AND ADDS THAT TO THE FINAL PLAYER OBJECT
     const enrichTeamSelection = (teamSelection) => {
         if (!Array.isArray(teamSelection)) {
             console.warn("Invalid teamSelection passed in:", teamSelection);
@@ -146,19 +128,46 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         })
     };
 
+    // THIS GETS THE SELECTION OF BOTH MANAGERS IN PARALLEL, AND THEN ENRICHES THEM BOTH, AND SETS THE STATE
+    const fetchTeamSelections = async (selectedManagerDetails, opponentManagerDetails) => {
+        const [rawSel, rawOpp] = await Promise.all([
+            fetchManagerSelection(selectedManagerDetails),
+            fetchManagerSelection(opponentManagerDetails)
+        ]);
 
+        const enrichedSelectedManagerSelection = enrichTeamSelection(rawSel);
+        const enrichedOpponentManagerSelection = enrichTeamSelection(rawOpp);
+
+        setHomeTeamSelection(enrichedSelectedManagerSelection);
+        setAwayTeamSelection(enrichedOpponentManagerSelection);
+    };
+
+    // THIS IS THE ORCHESTRATOR THAT RUNS IN ORDER ASYNC 
+    const loadH2HTeams = async () => {
+        try {
+            // 1. Identify managers
+            const { selectedManagerDetails, opponentManagerDetails } = getFixtureManagers(selectedManagerId);
+
+            // 2. refresh Live points first
+            await fetchPlayerLivePoints();
+
+            //3. Fetch & enrich both teams
+            await fetchTeamSelections(selectedManagerDetails, opponentManagerDetails);
+        } catch (error) {
+            console.error("loadH2HTeams error:", error.message)
+        }
+    }
 
     // Automatically fetch data when dependencies are ready
     useEffect(() => {
         if (currentGW && fixtures.length && playersData.length && selectedManagerId) {
-            fetchFixturesManagers();
-            fetchManagersSelection();
+            loadH2HTeams();
         }
     }, [currentGW, fixtures, playersData, selectedManagerId]);
 
     return (
         <div>
-            <button onClick={fetchFixturesManagers}>
+            <button onClick={getFixtureManagers}>
                 Test Fetch Picks
             </button>
             <button onClick={fetchPlayerLivePoints}>
