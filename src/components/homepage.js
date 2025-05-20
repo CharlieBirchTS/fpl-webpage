@@ -2,13 +2,13 @@ import '../css/HomePage.css';
 import LiveFixtures from './LiveFixtures';
 import React, { useState, useEffect } from 'react';
 
-const HomePage = ({ selectedManager }) => {
+const HomePage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
   const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
   const league_id = '10866'
 
   useEffect(() => {
-    if (!selectedManager) return; // Don’t fetch until we have a manager ID
+    if (!selectedManagerId) return; // Don’t fetch until we have a manager ID
 
     // Fetch data from API and update the state
     const fetchData = async () => {
@@ -20,7 +20,7 @@ const HomePage = ({ selectedManager }) => {
         const result = await response.json();
         const standings = result.standings;
 
-        const team = standings.find(team => team.league_entry === selectedManager);
+        const team = standings.find(team => team.league_entry === selectedManagerId);
 
         if (!team) {
           console.warn("Manager not found");
@@ -43,7 +43,7 @@ const HomePage = ({ selectedManager }) => {
     };
 
     fetchData(); // Fetch data when the component mounts
-  }, [selectedManager]); // Empty dependency array to run only once when the component mounts
+  }, [selectedManagerId]); // Empty dependency array to run only once when the component mounts
 
   return (
     <div className="homepage">
@@ -52,7 +52,7 @@ const HomePage = ({ selectedManager }) => {
         <div className="square">{data.square2}</div>
         <div className="square">{data.square3}</div>
         <div className="large-box">
-          <LiveFixtures />
+          <LiveFixtures gameweekFinished={gameweekFinished} fixtures={fixtures} />
         </div>
       </div>
     </div>
