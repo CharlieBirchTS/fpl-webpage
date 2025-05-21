@@ -8,233 +8,237 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
     const [awayTeamSelection, setAwayTeamSelection] = useState([]);
     const [playerLivePoints, setPlayerLivePoints] = useState({});
     const [selectedFixture, setSelectedFixture] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState(null);
+    const [refreshDisabled, setRefreshDisabled] = useState(false);
+    const [refreshCooldown, setRefreshCooldown] = useState(0);
 
-    // sets default fixture to the one with the selected manager in
+    ///////////////////////////////
+    // Basic logging in the console
+    ///////////////////////////////
     useEffect(() => {
-        if (!selectedFixture && selectedManagerId && fixtures.length && managersData.length && playersData.length) {
-            const defaultFixture = fixtures.find(
-                f => f.league_entry_1 === selectedManagerId || f.league_entry_2 === selectedManagerId
-            );
-            if (defaultFixture) {
-                setSelectedFixture(defaultFixture);
+        console.log("🔁 playerLivePoints updated:", playerLivePoints);
+    }, [playerLivePoints]);
 
-                // 👇 Immediately get both managers
-                const manager1 = managersData.find(m => m.entry_id === defaultFixture.league_entry_1);
-                const manager2 = managersData.find(m => m.entry_id === defaultFixture.league_entry_2);
+    useEffect(() => {
+        console.log("🔁 selectedManagerId updated:", selectedManagerId);
+    }, [selectedManagerId]);
 
-                if (manager1 && manager2) {
-                    // 👇 Load live points and enriched team data right away
-                    fetchPlayerLivePoints();
-                    fetchTeamSelections(manager1, manager2)
-                }
-            }
-        }
-    }, [selectedFixture, selectedManagerId, fixtures, managersData, playersData]);
+    useEffect(() => {
+        console.log("✅ Enriched team for selected manager:", homeTeamSelection);
+        console.log("✅ Enriched team for opponent manager:", awayTeamSelection);
+    }, [homeTeamSelection, awayTeamSelection]);
 
-    // THIS RETURNS THE DETAILS OF THE SELECTED MANAGER AND THEIR OPPONENT
-    const getFixtureManagers = (selectedManagerId) => {
-        try {
-            // get the details of the selected manager from prop passed from App.js
-            const selectedManagerDetails = managersData.find(m => m.id === selectedManagerId)
-            // check it returned something
-            if (!selectedManagerDetails) {
-                throw new Error(`❌ Manager with ID ${selectedManagerId} not found in managersData.`);
-            }
+    ///////////////////////////////
+    // Top Level Utility Functions
+    ///////////////////////////////
 
-            // return the object where the selected manager is either home or away
-            const selectedManagerFixture = fixtures.find(fix => fix.league_entry_1 === selectedManagerId || fix.league_entry_2 === selectedManagerId);
-            // check if something is returned
-            if (!selectedManagerFixture) {
-                throw new Error(`❌ No fixture found involving manager ID ${selectedManagerId}.`);
-            }
+    // Get time to be used for the refresh button
+    const formatTime = (date) => date ? new Date(date).toLocaleTimeString() : 'Not yet refreshed';
 
-            // obtain opponents manager ID from fixture
-            const selectedManagerOpponentId = selectedManagerFixture.league_entry_1 === selectedManagerId
-                ? selectedManagerFixture.league_entry_2
-                : selectedManagerFixture.league_entry_1;
-
-            // take that ID and then pull that managers details
-            const opponentManagerDetails = managersData.find(m => m.id === selectedManagerOpponentId);
-            if (!opponentManagerDetails) {
-                throw new Error(`❌ Opponent with ID ${selectedManagerOpponentId} not found in managersData.`);
-            }
-
-            return { selectedManagerDetails, opponentManagerDetails };
-
-        } catch (error) {
-            console.error(`Error fetching matchup data:`, error)
-        }
-    };
-
-    // THIS RETURNS THE RAW PICKS FROM THE API FOR A SINGLE MANAGER
-    const fetchManagerSelection = async (ManagerDetails) => {
-        if (!ManagerDetails || !ManagerDetails.entry_id || !currentGW) return;
-        try {
-            // now run the API to get the team of the selected manager
-            const res = await fetch(`/api/proxy/entry/${ManagerDetails.entry_id}/event/${currentGW}`);
-            const json = await res.json();
-            // a standard setter just stores this result as state, and if there's nothing returns empty array
-            const picks = json.picks || [];
-            return picks;  // ✅ also returns the data for further use
-
-
-        } catch (error) {
-            console.error(`Error fetching team selection for manager ${ManagerDetails.entry_id}:`, error)
-            return [];
-        }
-    };
-
-    // THIS RUNS THROUGH THE EXPLAIN COMPONENT OF THE API TO GENERATE LIVE POINTS
+    // Utility for getting the points, this extracts all the components
+    // within the Explain part of the API resp and sums the points together
     const calculateExplainPoints = (explainArray) => {
         if (!Array.isArray(explainArray)) return 0;
 
         return explainArray.reduce((total, group) => {
             if (!Array.isArray(group[0])) return total;
-
-            const groupPoints = group[0].reduce((sum, action) => {
-                return sum + (action.points ?? 0);
-            }, 0);
-
-            return total + groupPoints;
+            return total + group[0].reduce((sum, action) => sum + (action.points ?? 0), 0);
         }, 0);
     };
 
-    // THIS GETS THE RAW LIVE POINTS OBJECT FROM THE API AND MAPS LIVE POINTS TO PLAYER ID
-    const fetchPlayerLivePoints = async () => {
-        try {
-            const res = await fetch(`/api/proxy/event/${currentGW}/live`);
-            const json = await res.json();
-
-            const elements = json.elements;
-
-            const pointsMap = {};
-            for (const playerId in elements) {
-                const explain = elements[playerId].explain;
-                const totalPoints = calculateExplainPoints(explain);
-                pointsMap[parseInt(playerId)] = totalPoints;
-            }
-
-            setPlayerLivePoints(pointsMap);
-        } catch (error) {
-            console.error("Error fetching live points:", error);
-        }
-    };
-
-    // THIS MAPS THE IDS FOR TEAM AND POSITION AND ADDS THAT TO THE FINAL PLAYER OBJECT
+    // This takes the raw player object i.e. including IDs and replaces
+    // with actual values (player, team) and also adds the points to the object
     const enrichTeamSelection = (teamSelection) => {
-        if (!Array.isArray(teamSelection)) {
-            console.warn("Invalid teamSelection passed in:", teamSelection);
-            return [];
-        }
-
-        if (!Array.isArray(playersData) || playersData.length === 0) {
-            console.warn("playersData not ready yet:", playersData);
-            return teamSelection; // return raw if players can't be mapped yet
-        }
+        if (!Array.isArray(teamSelection)) return [];
+        if (!Array.isArray(playersData) || playersData.length === 0) return teamSelection;
 
         return teamSelection.map(sel => {
             const player = playersData.find(p => p.id === sel.element);
             if (!player) return sel;
 
-            // map the pos & team to players object to replace IDs with actual values
-            const position = positionMapping.find(pos => pos.id === player.element_type)
-            const team = teamMapping.find(t => t.id === player.team)
+            const position = positionMapping.find(pos => pos.id === player.element_type);
+            const team = teamMapping.find(t => t.id === player.team);
 
-            // map this GWs points for each player from the PointsMap obj created in fetchPlayerLivePoints above
-            const liveGameweekPoints = playerLivePoints[sel.element] ?? 0;
-
-            // get the starting position of players to distinguish between start and subs
-            const playerStartingPosition = sel.position;
-
-            // return fully enriched player object for the team selections
             return {
                 elementId: sel.element,
-                startingPosition: playerStartingPosition,
+                startingPosition: sel.position,
                 name: player.web_name,
-                position: position.plural_name_short,
-                team: team.name,
-                points: liveGameweekPoints
-            }
-        })
+                position: position?.plural_name_short || '',
+                team: team?.name || '',
+                points: playerLivePoints[sel.element] ?? 0
+            };
+        });
     };
 
+    // splits the starting 11 from the subs in the managers selection
     const splitStartersAndSubs = (team) => {
         const starters = team.filter(player => player.startingPosition < 12);
         const subs = team.filter(player => player.startingPosition >= 12);
-        return { starters, subs }
+        return { starters, subs };
     };
 
-    const getTotalTeamPoints = (players) => {
-        return players.reduce((sum, p) => sum + (p.points ?? 0), 0);
-    };
+    // sums all the points of all the players to the teams total points is live
+    const getTotalTeamPoints = (players) => players.reduce((sum, p) => sum + (p.points ?? 0), 0);
 
-    // THIS GETS THE SELECTION OF BOTH MANAGERS IN PARALLEL, AND THEN ENRICHES THEM BOTH, AND SETS THE STATE
-    const fetchTeamSelections = async (selectedManagerDetails, opponentManagerDetails) => {
-        const [rawSel, rawOpp] = await Promise.all([
-            fetchManagerSelection(selectedManagerDetails),
-            fetchManagerSelection(opponentManagerDetails)
-        ]);
+    ///////////////////////////////
+    // Main Component
+    ///////////////////////////////
 
-        const enrichedSelectedManagerSelection = enrichTeamSelection(rawSel);
-        const enrichedOpponentManagerSelection = enrichTeamSelection(rawOpp);
+    // Step 1
+    // ✅ Automatically sets the default fixture on initial load
+    // This effect finds and sets the fixture involving the selected manager,
+    // but only runs once when all required data is available.
+    // It exits early if a fixture is already selected, or if any dependencies aren't ready yet.
+    useEffect(() => {
+        if (
+            selectedFixture ||
+            !selectedManagerId ||
+            fixtures.length === 0 ||
+            managersData.length === 0 ||
+            playersData.length === 0
+        ) return;
 
-        setHomeTeamSelection(enrichedSelectedManagerSelection);
-        setAwayTeamSelection(enrichedOpponentManagerSelection);
-    };
+        const defaultFixture = fixtures.find(
+            f => f.league_entry_1 === selectedManagerId || f.league_entry_2 === selectedManagerId
+        );
 
-    // THIS IS THE ORCHESTRATOR THAT RUNS IN ORDER ASYNC 
-    const loadH2HTeams = async () => {
-        try {
-            // 1. Identify managers
-            const { selectedManagerDetails, opponentManagerDetails } = getFixtureManagers(selectedManagerId);
-            if (!selectedManagerDetails || !opponentManagerDetails) return;
-
-            // 2. refresh Live points first
-            await fetchPlayerLivePoints();
-
-            //3. Fetch & enrich both teams
-            await fetchTeamSelections(selectedManagerDetails, opponentManagerDetails);
-
-        } catch (error) {
-            console.error("loadH2HTeams error:", error.message)
+        if (defaultFixture) {
+            setSelectedFixture(defaultFixture);
         }
-    }
+    }, [selectedFixture, selectedManagerId, fixtures, managersData, playersData]);
 
-    // reload the players & points when the user selects the fixture
-    // I think this can be made more seamless by passing the managers from the dropdown into the loadH2HTeams
-    // need to have a think about it. I've built a lot of logic to set the manager from the selected manager 
-    // so surely I can pass it more generically as manager 1 or 2 and set the default from the default fixture
-    // at the top of this file maybe?
+    // Step 2
+    // 📥 Fetches a manager's team selection for the current gameweek
+    // Uses the manager's entry_id and currentGW to hit the FPL API.
+    // Returns an array of player picks, or an empty array if the fetch fails or data is incomplete.
+    const fetchManagerSelection = async (managerDetails) => {
+        if (!managerDetails || !managerDetails.entry_id || !currentGW) return [];
+        try {
+            const res = await fetch(`/api/proxy/entry/${managerDetails.entry_id}/event/${currentGW}`);
+            const json = await res.json();
+            console.log(`📥 Picks for manager ${managerDetails.managerName}:`, json.picks);
+            return json.picks || [];
+        } catch (error) {
+            console.error(`Error fetching team selection for manager ${managerDetails.entry_id}:`, error);
+            return [];
+        }
+    };
+
+    // Step 3
+    // ⚡ Fetches live player points for the current gameweek
+    // Runs once whenever `currentGW` changes.
+    // Retrieves raw explain data from the API and maps total points per player.
+    // Updates the `playerLivePoints` state, which is later used to enrich team selections.
+    const fetchPlayerLivePoints = async () => {
+        if (!currentGW) return; // ⛔ don’t run until GW is ready
+
+        setIsLoading(true);
+        try {
+            const res = await fetch(`/api/proxy/event/${currentGW}/live`);
+            const json = await res.json();
+
+            const pointsMap = {};
+            for (const playerId in json.elements) {
+                const explain = json.elements[playerId].explain;
+                const totalPoints = calculateExplainPoints(explain);
+                pointsMap[parseInt(playerId)] = totalPoints;
+            }
+
+            console.log("✅ Fetched live points for currentGW:", currentGW, pointsMap);
+
+            setPlayerLivePoints(pointsMap);
+            setLastUpdated(new Date());
+        } catch (error) {
+            console.error("Error fetching live points:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // 🚀 Fetch live player points once when the component mounts or when `currentGW` changes
+    // Uses a normal async function declared outside the effect for reuse (e.g. manual refresh).
+    // Only fetches if the `playerLivePoints` object is currently empty.
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (!playerLivePoints || Object.keys(playerLivePoints).length === 0) {
+            fetchPlayerLivePoints();
+        }
+    }, [currentGW]);
+
+
+    // 🧩 Loads and enriches team selections whenever the user selects a new fixture
+    // Waits until all required data is available: fixture, players, managers, and live points
+    // Fetches raw picks for both managers, enriches them with player details and live points,
+    // then updates the home and away team selections used for rendering
     useEffect(() => {
         const loadFromSelectedFixture = async () => {
-            if (!selectedFixture & homeTeamSelection.length === 0) return;
+            if (
+                !selectedFixture ||
+                !playerLivePoints || Object.keys(playerLivePoints).length === 0 ||
+                !playersData || playersData.length === 0 ||
+                !managersData || managersData.length === 0
+            ) return;
 
-            const manager1 = managersData.find(m => m.id === selectedFixture.league_entry_1)
-            const manager2 = managersData.find(m => m.id === selectedFixture.league_entry_2)
+            const manager1 = managersData.find(m => m.id === selectedFixture.league_entry_1);
+            const manager2 = managersData.find(m => m.id === selectedFixture.league_entry_2);
+
+            console.log("👥 Loaded managers from fixture:", { manager1, manager2 });
 
             if (manager1 && manager2) {
-                await fetchPlayerLivePoints(); // Optional if already loaded
-                await fetchTeamSelections(manager1, manager2);
+                const [rawSel, rawOpp] = await Promise.all([
+                    fetchManagerSelection(manager1),
+                    fetchManagerSelection(manager2)
+                ]);
+
+                setHomeTeamSelection(enrichTeamSelection(rawSel));
+                setAwayTeamSelection(enrichTeamSelection(rawOpp));
             }
         };
 
         loadFromSelectedFixture();
-    }, [selectedFixture]);
+    }, [selectedFixture, managersData, playersData, playerLivePoints]);
 
-    // Automatically fetch data when dependencies are ready
-    useEffect(() => {
-        if (currentGW && fixtures.length && playersData.length && selectedManagerId) {
-            loadH2HTeams();
-            console.log(fixtures);
-        }
-    }, [currentGW, fixtures, playersData, selectedManagerId]);
 
+    // 🔄 Manually refreshes live player points when the user clicks the refresh button
+    // Disables the button for 10 seconds to prevent repeated API calls
+    // Calls the same fetch function used on initial load to update the global points map
+    const handleRefreshPoints = async () => {
+        setRefreshDisabled(true);
+        setRefreshCooldown(10);
+
+        console.log("🔄 Manual refresh triggered at:", new Date().toLocaleTimeString());
+
+        await fetchPlayerLivePoints();
+        // setTimeout(() => setRefreshDisabled(false), 10000); // disable for 10 seconds
+        const countdown = setInterval(() => {
+            setRefreshCooldown(prev => {
+                if (prev <= 1) {
+                    clearInterval(countdown);
+                    setRefreshDisabled(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+
+    const isPlayerDataEmpty = Object.keys(playerLivePoints).length === 0;
+    if (isLoading || isPlayerDataEmpty) return <div>Loading</div>;
 
     return (
         <div className="h2h-container">
             <div className="gameweek-header">
-                <span className={`status ${gameweekFinished ? 'finished' : 'live'}`} n>
+                <span className={`status ${gameweekFinished ? 'finished' : 'live'}`}>
                     {gameweekFinished ? '🔴 Gameweek' : '🟢 Gameweek'} {currentGW} – {gameweekFinished ? 'Finished' : 'Live'}
+                </span>
+                <button onClick={handleRefreshPoints} disabled={refreshDisabled} style={{ marginLeft: '1rem' }}>
+                    {refreshDisabled ? `⏳ Refresh available in ${refreshCooldown}s...` : '🔄 Refresh Points'}
+                </button>
+                <span style={{ marginLeft: '1rem', fontSize: '0.9rem', color: '#666' }}>
+                    Last updated: {formatTime(lastUpdated)}
                 </span>
             </div>
             <div className="fixture-selector">
@@ -243,25 +247,11 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
                     id="fixture-select"
                     onChange={(e) => {
                         const selectedKey = e.target.value;
-                        console.log("User selected fixture key:", selectedKey)
-                        fixtures.forEach(f => {
-                            const key = `${f.league_entry_1}-${f.league_entry_2}`;
-                            console.log("Available fixture key:", key);
-                        });
-                        const newFixture = fixtures.find(f => `${f.league_entry_1}-${f.league_entry_2}` === selectedKey ||
-                            `${f.league_entry_2}-${f.league_entry_1}` === selectedKey);
-
-                        if (newFixture) {
-                            setSelectedFixture(newFixture);
-                        }
+                        const newFixture = fixtures.find(f => `${f.league_entry_1}-${f.league_entry_2}` === selectedKey || `${f.league_entry_2}-${f.league_entry_1}` === selectedKey);
+                        if (newFixture) setSelectedFixture(newFixture);
                     }}
-                    value={
-                        selectedFixture
-                            ? `${selectedFixture.league_entry_1}-${selectedFixture.league_entry_2}`
-                            : ''
-                    }
+                    value={selectedFixture ? `${selectedFixture.league_entry_1}-${selectedFixture.league_entry_2}` : ''}
                 >
-
                     {fixtures.map((fixture) => {
                         const team1 = managersData.find(m => m.id === fixture.league_entry_1);
                         const team2 = managersData.find(m => m.id === fixture.league_entry_2);
@@ -272,18 +262,13 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
 
                         const key = `${fixture.league_entry_1}-${fixture.league_entry_2}`;
 
-                        // console.log("Fixture option key:", key, "Label:", label);
-
                         return (
-                            <option key={key} value={key}>
-                                {label}
-                            </option>
+                            <option key={key} value={key}>{label}</option>
                         );
                     })}
                 </select>
             </div>
             <div className="h2h-grid">
-                {/* Your Team Panel */}
                 <div className="h2h-team">
                     <h3>Your Team</h3>
                     <h4>Total Points: {getTotalTeamPoints(splitStartersAndSubs(homeTeamSelection).starters)}</h4>
@@ -303,7 +288,6 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
                         ))}
                     </ul>
                 </div>
-                {/* Opponent Team Panel */}
                 <div className="h2h-team">
                     <h3>Opponent</h3>
                     <h4>Total Points: {getTotalTeamPoints(splitStartersAndSubs(awayTeamSelection).starters)}</h4>
@@ -325,7 +309,7 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
                 </div>
             </div>
         </div>
-    )
+    );
 };
 
 export default H2H;
