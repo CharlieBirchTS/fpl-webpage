@@ -228,6 +228,10 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
     const isPlayerDataEmpty = Object.keys(playerLivePoints).length === 0;
     if (isLoading || isPlayerDataEmpty) return <div>Loading</div>;
 
+
+
+
+
     return (
         <div className="h2h-container">
             <div className="gameweek-header">
