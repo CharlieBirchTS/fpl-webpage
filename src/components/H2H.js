@@ -47,6 +47,18 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         }, 0);
     };
 
+    const isPlayerDataEmpty = Object.keys(playerLivePoints).length === 0;
+
+    const gameweekClass = gameweekFinished
+        ? 'bg-red-100 text-red-700'
+        : 'bg-green-100 text-green-700';
+
+    const homeTeamManagerDetails = managersData.find(m => m.id === selectedFixture?.league_entry_1);
+    const awayTeamManagerDetails = managersData.find(m => m.id === selectedFixture?.league_entry_2);
+
+    const homeTeamName = homeTeamManagerDetails?.teamName || "Home Team";
+    const awayTeamName = awayTeamManagerDetails?.teamName || "Away Team";
+
     // This takes the raw player object i.e. including IDs and replaces
     // with actual values (player, team) and also adds the points to the object
     const enrichTeamSelection = (teamSelection) => {
@@ -224,95 +236,141 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         }, 1000);
     };
 
-
-    const isPlayerDataEmpty = Object.keys(playerLivePoints).length === 0;
     if (isLoading || isPlayerDataEmpty) return <div>Loading</div>;
 
-
-
-
-
     return (
-        <div className="h2h-container">
-            <div className="gameweek-header">
-                <span className={`status ${gameweekFinished ? 'finished' : 'live'}`}>
+        <div className="min-h-screen bg-gray-50 p-6 space-y-6">
+            {/* Header */}
+            {/* GW Status */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className={`text-sm font-medium px-3 py-2 rounded ${gameweekClass}`}>
                     {gameweekFinished ? '🔴 Gameweek' : '🟢 Gameweek'} {currentGW} – {gameweekFinished ? 'Finished' : 'Live'}
-                </span>
-                <button onClick={handleRefreshPoints} disabled={refreshDisabled} style={{ marginLeft: '1rem' }}>
-                    {refreshDisabled ? `⏳ Refresh available in ${refreshCooldown}s...` : '🔄 Refresh Points'}
-                </button>
-                <span style={{ marginLeft: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                    Last updated: {formatTime(lastUpdated)}
-                </span>
+                </div>
+                {/* Fixture Selector */}
+                <div className="flex justify-center">
+                    <select
+                        id="fixture-select"
+                        onChange={(e) => {
+                            const selectedKey = e.target.value;
+                            const newFixture = fixtures.find(f => `${f.league_entry_1}-${f.league_entry_2}` === selectedKey || `${f.league_entry_2}-${f.league_entry_1}` === selectedKey);
+                            if (newFixture) setSelectedFixture(newFixture);
+                        }}
+                        value={selectedFixture ? `${selectedFixture.league_entry_1}-${selectedFixture.league_entry_2}` : ''}
+                        className="w-full border px-4 py-2 rounded shadow-sm"
+                    >
+                        {fixtures.map((fixture) => {
+                            const team1 = managersData.find(m => m.id === fixture.league_entry_1);
+                            const team2 = managersData.find(m => m.id === fixture.league_entry_2);
+
+                            const label = team1 && team2
+                                ? `${team1.managerName} vs ${team2.managerName}`
+                                : `${fixture.league_entry_1} vs ${fixture.league_entry_2}`;
+
+                            const key = `${fixture.league_entry_1}-${fixture.league_entry_2}`;
+
+                            return (
+                                <option key={key} value={key}>{label}</option>
+                            );
+                        })}
+                    </select>
+                </div>
+                {/* Refresh button */}
+                <div className="flex justify-end items-center gap-3 text-sm text-gray-600">
+                    <button
+                        onClick={handleRefreshPoints}
+                        disabled={refreshDisabled}
+                        className="bg-white border px-3 py-2 rounded shadow-sm hover:bg-gray-100 disabled:opacity-50">
+                        {refreshDisabled ? `⏳ Refresh available in ${refreshCooldown}s...` : '🔄 Refresh Points'}
+                    </button>
+                    <span className="hidden md:inline">
+                        Last updated: {formatTime(lastUpdated)}
+                    </span>
+                </div>
             </div>
-            <div className="fixture-selector">
-                <label htmlFor="fixture-selector">Select a Fixture: </label>
-                <select
-                    id="fixture-select"
-                    onChange={(e) => {
-                        const selectedKey = e.target.value;
-                        const newFixture = fixtures.find(f => `${f.league_entry_1}-${f.league_entry_2}` === selectedKey || `${f.league_entry_2}-${f.league_entry_1}` === selectedKey);
-                        if (newFixture) setSelectedFixture(newFixture);
-                    }}
-                    value={selectedFixture ? `${selectedFixture.league_entry_1}-${selectedFixture.league_entry_2}` : ''}
-                >
-                    {fixtures.map((fixture) => {
-                        const team1 = managersData.find(m => m.id === fixture.league_entry_1);
-                        const team2 = managersData.find(m => m.id === fixture.league_entry_2);
 
-                        const label = team1 && team2
-                            ? `${team1.managerName} vs ${team2.managerName}`
-                            : `${fixture.league_entry_1} vs ${fixture.league_entry_2}`;
 
-                        const key = `${fixture.league_entry_1}-${fixture.league_entry_2}`;
-
-                        return (
-                            <option key={key} value={key}>{label}</option>
-                        );
-                    })}
-                </select>
-            </div>
-            <div className="h2h-grid">
-                <div className="h2h-team">
-                    <h3>Your Team</h3>
-                    <h4>Total Points: {getTotalTeamPoints(splitStartersAndSubs(homeTeamSelection).starters)}</h4>
-                    <ul>
+            {/* Team Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Home Team */}
+                <div className="bg-white p-4 rounded-xl shadow space-y-4">
+                    <div className="relative">
+                        <h3 className="text-xl font-extrabold text-gray-800 tracking-tight text-center">{homeTeamName}</h3>
+                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl font-extrabold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">
+                            {getTotalTeamPoints(splitStartersAndSubs(homeTeamSelection).starters)}</span>
+                    </div>
+                    {/* Starters */}
+                    <div className="space-y-1">
                         {splitStartersAndSubs(homeTeamSelection).starters.map((player, index) => (
-                            <li key={`home-starter-${index}`}>
-                                {player.name} ({player.position} – {player.team}) — {player.points} pts
-                            </li>
+                            <div
+                                key={`home-starter-${index}`}
+                                className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                <span
+                                    className={`text-xs font-semibold px-2 py-1 rounded-full
+                                                    ${player.position === 'GK' ? 'bg-blue-100 text-blue-800' :
+                                            player.position === 'DEF' ? 'bg-green-100 text-green-800' :
+                                                player.position === 'MID' ? 'bg-yellow-100 text-yellow-800' :
+                                                    player.position === 'FWD' ? 'bg-pink-100 text-pink-800' :
+                                                        'bg-gray-100 text-gray-700'}
+                                                    `}>
+                                    {player.position}
+                                </span>
+                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                            </div>
                         ))}
-                    </ul>
-                    <h5>Substitutes</h5>
-                    <ul className="subs">
+                    </div>
+                    <div className="text-sm font-bold text-indigo-800 text-center mt-4 uppercase tracking-wide">Substitutes</div>
+                    <div className="space-y-1">
                         {splitStartersAndSubs(homeTeamSelection).subs.map((player, index) => (
-                            <li key={`home-sub-${index}`}>
-                                {player.name} ({player.position} – {player.team}) — {player.points} pts
-                            </li>
+                            <div key={`home-sub-${index}`} className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">{player.position}</span>
+                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
-                <div className="h2h-team">
-                    <h3>Opponent</h3>
-                    <h4>Total Points: {getTotalTeamPoints(splitStartersAndSubs(awayTeamSelection).starters)}</h4>
-                    <ul>
+
+
+                {/* Away Team */}
+                <div className="bg-white p-4 rounded-xl shadow space-y-4">
+                    <div className="relative">
+                        <h3 className="text-xl font-extrabold text-gray-800 tracking-tight text-center">{awayTeamName}</h3>
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-extrabold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">
+                            {getTotalTeamPoints(splitStartersAndSubs(awayTeamSelection).starters)}
+                        </span>
+                    </div>
+                    {/* Starters */}
+                    <div className="space-y-1">
                         {splitStartersAndSubs(awayTeamSelection).starters.map((player, index) => (
-                            <li key={`away-starter-${index}`}>
-                                {player.name} ({player.position} – {player.team}) — {player.points} pts
-                            </li>
+                            <div
+                                key={`away-starter-${index}`}
+                                className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                <span className={`text-xs font-semibold px-2 py-1 rounded-full
+                                                    ${player.position === 'GK' ? 'bg-blue-100 text-blue-800' :
+                                        player.position === 'DEF' ? 'bg-green-100 text-green-800' :
+                                            player.position === 'MID' ? 'bg-yellow-100 text-yellow-800' :
+                                                player.position === 'FWD' ? 'bg-pink-100 text-pink-800' :
+                                                    'bg-gray-100 text-gray-700'}
+                                                    `}>{player.position}</span>
+                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                            </div>
                         ))}
-                    </ul>
-                    <h5>Substitutes</h5>
-                    <ul className="subs">
+                    </div>
+                    <div className="text-sm font-bold text-indigo-800 text-center mt-4 uppercase tracking-wide">Substitutes</div>
+                    <div className="space-y-1">
                         {splitStartersAndSubs(awayTeamSelection).subs.map((player, index) => (
-                            <li key={`away-sub-${index}`}>
-                                {player.name} ({player.position} – {player.team}) — {player.points} pts
-                            </li>
+                            <div key={`away-sub-${index}`} className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">{player.position}</span>
+                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
