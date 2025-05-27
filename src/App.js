@@ -1,27 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './css/App.css';
-import logo from './logo.png'; // Import logo
+// import logo from './logo.png'; // Import logo
+import logo from './fpl-webpage-logo.png';
 import managersJSON from './constants/manager_details.json'
 import Dropdown from './components/dropdown'
 import Homepage from './components/homepage'
-import DashboardEmbed from './components/dashboard';
-import AgenticEmbed from './components/agentic';
 import H2H from './components/H2H';
-
-
-// import {
-//   AuthType,
-//   init
-// }
-//   from '@thoughtspot/visual-embed-sdk';
-
-// init({
-//   thoughtSpotHost: "https://thoughtspotpmm.thoughtspot.cloud/",
-//   authType: AuthType.Basic,
-//   username: "retailapparelanalyst",
-//   password: "PMM$.data",
-//   callPrefetch: true
-// });
 
 const App = () => {
   const leagueId = '10866'
@@ -102,37 +86,60 @@ const App = () => {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="sidebar">
-        <div className="logo-container">
-          <img src={logo} alt="Logo" className="logo" />
+      <div className="sidebar bg-gray-800 w-64 min-h-screen flex flex-col items-center py-6 fixed left-0">
+        <div className="logo-container mb-8 w-full px-4">
+          <img
+            src={logo}
+            alt="Logo"
+            className="w-full h-auto object-contain max-w-[150px] mx-auto"
+          />
         </div>
-        <Dropdown onSelect={setSelectedManagerId} managersData={managersData} />
         {/* Navigation Links */}
-        <div className="menu">
-          <button onClick={() => handleMenuClick('home')}>Home</button>
-          <button onClick={() => handleMenuClick('h2h')}>H2H</button>
-          {/* <button onClick={() => handleMenuClick('dashboard')}>Dashboard</button>
-          <button onClick={() => handleMenuClick('fplAgent')}>FPL Agent</button> */}
+        <div className="menu flex flex-col w-full px-4 space-y-4">
+          <button
+            onClick={() => handleMenuClick('home')}
+            className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'home'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700'
+              }`}
+          >
+            Home
+          </button>
+          <button
+            onClick={() => handleMenuClick('h2h')}
+            className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'h2h'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700'
+              }`}
+          >
+            H2H
+          </button>
         </div>
       </div>
-
-      {/* Main Content Area */}
-      <div className="content">
-        {activeSection === 'home' && (<Homepage selectedManagerId={Number(selectedManagerId)}
-          currentGW={currentGW}
-          gameweekFinished={gameweekFinished}
-          fixtures={fixtures} />)}
-        {activeSection === 'h2h' && (<H2H currentGW={currentGW}
-          gameweekFinished={gameweekFinished}
-          fixtures={fixtures}
-          selectedManagerId={selectedManagerId}
-          managersData={managersData}
-          playersData={playersData} />)}
-        {/* {activeSection === 'dashboard' && <DashboardEmbed />}
-        {activeSection === 'fplAgent' && <AgenticEmbed />} */}
-      </div>
+      {!selectedManagerId ? (
+        <div className="flex flex-col items-center justify-center h-screen ml-64 flex-grow bg-gray-100">
+          <div className="text-center">
+            <p className="text-2xl font-semibold text-gray-700 mb-3">👋 Welcome!</p>
+            <p className="text-lg text-gray-600 pb-2">Select a manager to continue</p>
+            <Dropdown onSelect={setSelectedManagerId} managersData={managersData} />
+          </div>
+        </div>
+      ) : (
+        <div className="content ml-64 p-8 bg-gray-100 min-h-screen">
+          {activeSection === 'home' && (<Homepage selectedManagerId={Number(selectedManagerId)}
+            currentGW={currentGW}
+            gameweekFinished={gameweekFinished}
+            fixtures={fixtures} />)}
+          {activeSection === 'h2h' && (<H2H currentGW={currentGW}
+            gameweekFinished={gameweekFinished}
+            fixtures={fixtures}
+            selectedManagerId={selectedManagerId}
+            managersData={managersData}
+            playersData={playersData} />)}
+        </div>
+      )}
     </div>
   );
 };

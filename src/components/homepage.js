@@ -47,35 +47,28 @@ const HomePage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
 
   return (
     <div className="homepage min-h-screen w-full p-6 bg-gray-50">
-      {!selectedManagerId ? (
-        <div className="flex flex-col items-center justify-center h-full text-gray-500 text-lg">
-          <p className="mb-2">👋 Welcome!</p>
-          <p>Select a manager to continue</p>
-        </div>
-      ) : (
-        <div className="w-full max-w-7xl mx-auto space-y-8">
-          {/* Stat Boxes */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow text-center">
-              <h4 className="text-sm text-gray-500">League Position</h4>
-              <p className="text-3xl font-bold text-indigo-700">{data.square1}</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow text-center">
-              <h4 className="text-sm text-gray-500">League Points</h4>
-              <p className="text-3xl font-bold text-indigo-700">{data.square2}</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow text-center">
-              <h4 className="text-sm text-gray-500">Total Points</h4>
-              <p className="text-3xl font-bold text-indigo-700">{data.square3}</p>
-            </div>
+      <div className="w-full max-w-7xl mx-auto space-y-8">
+        {/* Stat Boxes */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow text-center">
+            <h4 className="text-sm text-gray-500">League Position</h4>
+            <p className="text-3xl font-bold text-indigo-700">{data.square1}</p>
           </div>
+          <div className="bg-white p-6 rounded-xl shadow text-center">
+            <h4 className="text-sm text-gray-500">League Points</h4>
+            <p className="text-3xl font-bold text-indigo-700">{data.square2}</p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow text-center">
+            <h4 className="text-sm text-gray-500">Total Points</h4>
+            <p className="text-3xl font-bold text-indigo-700">{data.square3}</p>
+          </div>
+        </div>
 
-          {/* Live Fixtures */}
-          <div className="bg-white p-6 rounded-xl shadow">
-            <LiveFixtures gameweekFinished={gameweekFinished} fixtures={fixtures} />
-          </div>
+        {/* Live Fixtures */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <LiveFixtures gameweekFinished={gameweekFinished} fixtures={fixtures} />
         </div>
-      )}
+      </div>
     </div>
 
   );

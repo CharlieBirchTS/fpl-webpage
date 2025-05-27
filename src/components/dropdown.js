@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
-import managersData from '../constants/manager_details.json'
 
 const DropDown = ({ onSelect, managersData }) => {
 
