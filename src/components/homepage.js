@@ -27,7 +27,7 @@ const HomePage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
           return;
         }
 
-        const league_position = team.last_rank
+        const league_position = team.rank
         const league_points = team.total
         const league_total_points = team.points_for
 
