@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import './css/App.css';
-// import logo from './logo.png'; // Import logo
-import logo from './fpl-webpage-logo.png';
-import managersJSON from './constants/manager_details.json'
-import Dropdown from './components/dropdown'
-import Homepage from './components/homepage'
-import H2H from './components/H2H';
+import managersJSON from './constants/manager_details.json';
+import Layout from './components/common/Layout/index';
+import Dropdown from './components/common/Dropdown/index';
+import Homepage from './pages/Home/index';
+import H2H from './pages/H2H/index';
+import useManagerFixtures from './hooks/useManagerFixtures';
 
 const App = () => {
   const leagueId = '10866'
@@ -86,38 +85,13 @@ const App = () => {
   };
 
   return (
-    <div className="app-container flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="sidebar bg-gray-800 w-64 min-h-screen flex flex-col items-center py-6 fixed left-0">
-        <div className="logo-container mb-8 w-full px-4">
-          <img
-            src={logo}
-            alt="Logo"
-            className="w-full h-auto object-contain max-w-[150px] mx-auto"
-          />
-        </div>
-        {/* Navigation Links */}
-        <div className="menu flex flex-col w-full px-4 space-y-4">
-          <button
-            onClick={() => handleMenuClick('home')}
-            className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'home'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-300 hover:bg-gray-700'
-              }`}
-          >
-            Home
-          </button>
-          <button
-            onClick={() => handleMenuClick('h2h')}
-            className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'h2h'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-300 hover:bg-gray-700'
-              }`}
-          >
-            H2H
-          </button>
-        </div>
-      </div>
+    <Layout
+      activeSection={activeSection}
+      handleMenuClick={handleMenuClick}
+      selectedManagerId={selectedManagerId}
+      managersData={managersData}
+      setSelectedManagerId={setSelectedManagerId}
+    >
       {!selectedManagerId ? (
         <div className="flex flex-col items-center justify-center h-screen ml-64 flex-grow bg-gray-100">
           <div className="text-center">
@@ -140,7 +114,7 @@ const App = () => {
             playersData={playersData} />)}
         </div>
       )}
-    </div>
+    </Layout>
   );
 };
 
