@@ -4,7 +4,6 @@ import Layout from './components/common/Layout/index';
 import Dropdown from './components/common/Dropdown/index';
 import Homepage from './pages/Home/index';
 import H2H from './pages/H2H/index';
-import useManagerFixtures from './hooks/useManagerFixtures';
 
 const App = () => {
   const leagueId = '10866'
@@ -12,7 +11,6 @@ const App = () => {
   const [selectedManagerId, setSelectedManagerId] = useState(null);
   const [currentGW, setCurrentGW] = useState(null);
   const [gameweekFinished, setGameweekFinished] = useState(null);
-  const [fixtures, setFixtures] = useState([]);
   const [managersData, setManagersData] = useState([]);
   const [playersData, setPlayersData] = useState([]);
 
@@ -43,28 +41,6 @@ const App = () => {
     };
     fetchGameweek();
   }, []);
-
-  // get the manager fixtures and pass that object down to be used in multiple ways
-  useEffect(() => {
-    if (!currentGW) return;
-
-    const fetchCurrentManagerFixtures = async () => {
-      try {
-        const res = await fetch(`/api/proxy/league/${leagueId}/details`);
-        const json = await res.json();
-
-        const currentWeekFixtures = json.matches.filter(
-          match => match.event === currentGW
-        );
-
-        setFixtures(currentWeekFixtures);
-      } catch (error) {
-        console.error('Error fetching fixtures:', error);
-      }
-    };
-
-    fetchCurrentManagerFixtures();
-  }, [currentGW]);
 
   // generate an easier to use global object with all the managers key system data
   useEffect(() => {
@@ -101,17 +77,18 @@ const App = () => {
           </div>
         </div>
       ) : (
-        <div className="content ml-64 p-8 bg-gray-100 min-h-screen">
+        <div className="content ml-64 flex-1 bg-gray-100 min-h-screen">
           {activeSection === 'home' && (<Homepage selectedManagerId={Number(selectedManagerId)}
             currentGW={currentGW}
             gameweekFinished={gameweekFinished}
-            fixtures={fixtures} />)}
+            leagueId={leagueId}
+          />)}
           {activeSection === 'h2h' && (<H2H currentGW={currentGW}
             gameweekFinished={gameweekFinished}
-            fixtures={fixtures}
             selectedManagerId={selectedManagerId}
             managersData={managersData}
-            playersData={playersData} />)}
+            playersData={playersData}
+            leagueId={leagueId} />)}
         </div>
       )}
     </Layout>

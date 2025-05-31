@@ -13,7 +13,7 @@ const Layout = ({ children, activeSection, handleMenuClick, selectedManagerId, m
                 setSelectedManagerId={setSelectedManagerId}
             />
 
-            <main className="flex-1 ml-64">
+            <main className="flex-1">
                 {children} {/* This is where the content of the page will be rendered */}
             </main>
         </div>

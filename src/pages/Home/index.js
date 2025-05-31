@@ -1,13 +1,13 @@
 import LiveFixtures from '../../features/Fixtures/LiveFixtures.js';
 import React, { useState, useEffect } from 'react';
 
-const Homepage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
+const Homepage = ({ selectedManagerId, gameweekFinished, currentGW }) => {
     const [data, setData] = useState({ square1: 0, square2: 0, square3: 0 }); // Initial state for the squares
 
-    const league_id = '10866'
+    const leagueId = '10866';
 
     useEffect(() => {
-        if (!selectedManagerId) return; // Don’t fetch until we have a manager ID
+        if (!selectedManagerId) return; // Don't fetch until we have a manager ID
 
         // Fetch data from API and update the state
         const fetchData = async () => {
@@ -15,7 +15,7 @@ const Homepage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
             try {
                 // have to use a proxy to bypass CORS, proxy added to package.json file
                 // This will need amending when hosting on Vercel, this only works for localhost right now
-                const response = await fetch(`/api/proxy/league/${league_id}/details`);
+                const response = await fetch(`/api/proxy/league/${leagueId}/details`);
                 const result = await response.json();
                 const standings = result.standings;
 
@@ -45,7 +45,7 @@ const Homepage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
     }, [selectedManagerId]); // Empty dependency array to run only once when the component mounts
 
     return (
-        <div className="homepage min-h-screen w-full p-6 bg-gray-50">
+        <div className="homepage min-h-screen w-full p-8 bg-gray-50">
             <div className="w-full max-w-7xl mx-auto space-y-8">
                 {/* Stat Boxes */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -65,7 +65,7 @@ const Homepage = ({ selectedManagerId, gameweekFinished, fixtures }) => {
 
                 {/* Live Fixtures */}
                 <div className="bg-white p-6 rounded-xl shadow">
-                    <LiveFixtures gameweekFinished={gameweekFinished} fixtures={fixtures} />
+                    <LiveFixtures gameweekFinished={gameweekFinished} leagueId={leagueId} currentGW={currentGW} />
                 </div>
             </div>
         </div>
