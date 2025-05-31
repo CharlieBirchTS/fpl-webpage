@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { positionMapping } from '../../constants/positionMapping';
 import { teamMapping } from '../../constants/teamMapping';
+import useManagerFixtures from '../../hooks/useManagerFixtures';
 
-const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, managersData, playersData }) => {
+const H2H = ({ currentGW, gameweekFinished, selectedManagerId, managersData, playersData, leagueId }) => {
     const [homeTeamSelection, setHomeTeamSelection] = useState([]);
     const [awayTeamSelection, setAwayTeamSelection] = useState([]);
     const [playerLivePoints, setPlayerLivePoints] = useState({});
@@ -11,6 +12,8 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
     const [lastUpdated, setLastUpdated] = useState(null);
     const [refreshDisabled, setRefreshDisabled] = useState(false);
     const [refreshCooldown, setRefreshCooldown] = useState(0);
+
+    const { managerFixtures, managerFixturesLoading, managerFixturesError } = useManagerFixtures(leagueId, currentGW);
 
     ///////////////////////////////
     // Basic logging in the console
@@ -27,6 +30,14 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         console.log("✅ Enriched team for selected manager:", homeTeamSelection);
         console.log("✅ Enriched team for opponent manager:", awayTeamSelection);
     }, [homeTeamSelection, awayTeamSelection]);
+
+    useEffect(() => {
+        console.log("📊 Manager fixtures:", managerFixtures);
+    }, [managerFixtures]);
+
+    useEffect(() => {
+        console.log("📊 League ID is:", leagueId);
+    }, [leagueId]);
 
     ///////////////////////////////
     // Top Level Utility Functions
@@ -105,19 +116,20 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         if (
             selectedFixture ||
             !selectedManagerId ||
-            fixtures.length === 0 ||
+            !managerFixtures ||
+            managerFixtures.length === 0 ||
             managersData.length === 0 ||
             playersData.length === 0
         ) return;
 
-        const defaultFixture = fixtures.find(
+        const defaultFixture = managerFixtures.find(
             f => f.league_entry_1 === selectedManagerId || f.league_entry_2 === selectedManagerId
         );
 
         if (defaultFixture) {
             setSelectedFixture(defaultFixture);
         }
-    }, [selectedFixture, selectedManagerId, fixtures, managersData, playersData]);
+    }, [selectedFixture, selectedManagerId, managerFixtures, managersData, playersData]);
 
     // Step 2
     // 📥 Fetches a manager's team selection for the current gameweek
@@ -142,7 +154,7 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
     // Retrieves raw explain data from the API and maps total points per player.
     // Updates the `playerLivePoints` state, which is later used to enrich team selections.
     const fetchPlayerLivePoints = async () => {
-        if (!currentGW) return; // ⛔ don’t run until GW is ready
+        if (!currentGW) return; // ⛔ don't run until GW is ready
 
         setIsLoading(true);
         try {
@@ -235,141 +247,174 @@ const H2H = ({ currentGW, gameweekFinished, fixtures, selectedManagerId, manager
         }, 1000);
     };
 
+    if (managerFixturesLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-lg text-gray-600">Loading fixtures...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (managerFixturesError) {
+        return (
+            <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-lg text-red-600">Error loading fixtures: {managerFixturesError.message}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!managerFixtures || managerFixtures.length === 0) {
+        return (
+            <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-lg text-gray-600">No fixtures available for this gameweek</p>
+                </div>
+            </div>
+        );
+    }
+
     if (isLoading || isPlayerDataEmpty) return <div>Loading</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 space-y-6">
-            {/* Header */}
-            {/* GW Status */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className={`text-sm font-medium px-3 py-2 rounded ${gameweekClass}`}>
-                    {gameweekFinished ? '🔴 Gameweek' : '🟢 Gameweek'} {currentGW} – {gameweekFinished ? 'Finished' : 'Live'}
-                </div>
-                {/* Fixture Selector */}
-                <div className="flex justify-center">
-                    <select
-                        id="fixture-select"
-                        onChange={(e) => {
-                            const selectedKey = e.target.value;
-                            const newFixture = fixtures.find(f => `${f.league_entry_1}-${f.league_entry_2}` === selectedKey || `${f.league_entry_2}-${f.league_entry_1}` === selectedKey);
-                            if (newFixture) setSelectedFixture(newFixture);
-                        }}
-                        value={selectedFixture ? `${selectedFixture.league_entry_1}-${selectedFixture.league_entry_2}` : ''}
-                        className="w-full border px-4 py-2 rounded shadow-sm"
-                    >
-                        {fixtures.map((fixture) => {
-                            const team1 = managersData.find(m => m.id === fixture.league_entry_1);
-                            const team2 = managersData.find(m => m.id === fixture.league_entry_2);
-
-                            const label = team1 && team2
-                                ? `${team1.managerName} vs ${team2.managerName}`
-                                : `${fixture.league_entry_1} vs ${fixture.league_entry_2}`;
-
-                            const key = `${fixture.league_entry_1}-${fixture.league_entry_2}`;
-
-                            return (
-                                <option key={key} value={key}>{label}</option>
-                            );
-                        })}
-                    </select>
-                </div>
-                {/* Refresh button */}
-                <div className="flex justify-end items-center gap-3 text-sm text-gray-600">
-                    <button
-                        onClick={handleRefreshPoints}
-                        disabled={refreshDisabled}
-                        className="bg-white border px-3 py-2 rounded shadow-sm hover:bg-gray-100 disabled:opacity-50">
-                        {refreshDisabled ? `⏳ Refresh available in ${refreshCooldown}s...` : '🔄 Refresh Points'}
-                    </button>
-                    <span className="hidden md:inline">
-                        Last updated: {formatTime(lastUpdated)}
-                    </span>
-                </div>
-            </div>
-
-
-            {/* Team Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Home Team */}
-                <div className="bg-white p-4 rounded-xl shadow space-y-4">
-                    <div className="relative">
-                        <h3 className="text-xl font-extrabold text-gray-800 tracking-tight text-center">{homeTeamName}</h3>
-                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl font-extrabold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">
-                            {getTotalTeamPoints(splitStartersAndSubs(homeTeamSelection).starters)}</span>
+        <div className="h2h-page min-h-screen w-full p-8 bg-gray-50">
+            <div className="w-full max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                {/* GW Status */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className={`text-sm font-medium px-3 py-2 rounded ${gameweekClass}`}>
+                        {gameweekFinished ? '🔴 Gameweek' : '🟢 Gameweek'} {currentGW} – {gameweekFinished ? 'Finished' : 'Live'}
                     </div>
-                    {/* Starters */}
-                    <div className="space-y-1">
-                        {splitStartersAndSubs(homeTeamSelection).starters.map((player, index) => (
-                            <div
-                                key={`home-starter-${index}`}
-                                className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
-                                <span
-                                    className={`text-xs font-semibold px-2 py-1 rounded-full
-                                                    ${player.position === 'GK' ? 'bg-blue-100 text-blue-800' :
+                    {/* Fixture Selector */}
+                    <div className="flex justify-center">
+                        <select
+                            id="fixture-select"
+                            onChange={(e) => {
+                                const selectedKey = e.target.value;
+                                const newFixture = managerFixtures.find(f => `${f.league_entry_1}-${f.league_entry_2}` === selectedKey || `${f.league_entry_2}-${f.league_entry_1}` === selectedKey);
+                                if (newFixture) setSelectedFixture(newFixture);
+                            }}
+                            value={selectedFixture ? `${selectedFixture.league_entry_1}-${selectedFixture.league_entry_2}` : ''}
+                            className="w-full border px-4 py-2 rounded shadow-sm"
+                        >
+                            <option value="">Select a fixture</option>
+                            {managerFixtures.map((fixture) => {
+                                const team1 = managersData.find(m => m.id === fixture.league_entry_1);
+                                const team2 = managersData.find(m => m.id === fixture.league_entry_2);
+
+                                const label = team1 && team2
+                                    ? `${team1.managerName} vs ${team2.managerName}`
+                                    : `${fixture.league_entry_1} vs ${fixture.league_entry_2}`;
+
+                                const key = `${fixture.league_entry_1}-${fixture.league_entry_2}`;
+
+                                return (
+                                    <option key={key} value={key}>{label}</option>
+                                );
+                            })}
+                        </select>
+                    </div>
+                    {/* Refresh button */}
+                    <div className="flex justify-end items-center gap-3 text-sm text-gray-600">
+                        <button
+                            onClick={handleRefreshPoints}
+                            disabled={refreshDisabled}
+                            className="bg-white border px-3 py-2 rounded shadow-sm hover:bg-gray-100 disabled:opacity-50">
+                            {refreshDisabled ? `⏳ Refresh available in ${refreshCooldown}s...` : '🔄 Refresh Points'}
+                        </button>
+                        <span className="hidden md:inline">
+                            Last updated: {formatTime(lastUpdated)}
+                        </span>
+                    </div>
+                </div>
+
+
+                {/* Team Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Home Team */}
+                    <div className="bg-white p-4 rounded-xl shadow space-y-4">
+                        <div className="relative">
+                            <h3 className="text-xl font-extrabold text-gray-800 tracking-tight text-center">{homeTeamName}</h3>
+                            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-2xl font-extrabold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">
+                                {getTotalTeamPoints(splitStartersAndSubs(homeTeamSelection).starters)}</span>
+                        </div>
+                        {/* Starters */}
+                        <div className="space-y-1">
+                            {splitStartersAndSubs(homeTeamSelection).starters.map((player, index) => (
+                                <div
+                                    key={`home-starter-${index}`}
+                                    className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                    <span
+                                        className={`text-xs font-semibold px-2 py-1 rounded-full
+                                                        ${player.position === 'GK' ? 'bg-blue-100 text-blue-800' :
+                                                player.position === 'DEF' ? 'bg-green-100 text-green-800' :
+                                                    player.position === 'MID' ? 'bg-yellow-100 text-yellow-800' :
+                                                        player.position === 'FWD' ? 'bg-pink-100 text-pink-800' :
+                                                            'bg-gray-100 text-gray-700'}
+                                                        `}>
+                                        {player.position}
+                                    </span>
+                                    <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                    <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-sm font-bold text-indigo-800 text-center mt-4 uppercase tracking-wide">Substitutes</div>
+                        <div className="space-y-1">
+                            {splitStartersAndSubs(homeTeamSelection).subs.map((player, index) => (
+                                <div key={`home-sub-${index}`} className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">{player.position}</span>
+                                    <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                    <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+
+                    {/* Away Team */}
+                    <div className="bg-white p-4 rounded-xl shadow space-y-4">
+                        <div className="relative">
+                            <h3 className="text-xl font-extrabold text-gray-800 tracking-tight text-center">{awayTeamName}</h3>
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-extrabold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">
+                                {getTotalTeamPoints(splitStartersAndSubs(awayTeamSelection).starters)}
+                            </span>
+                        </div>
+                        {/* Starters */}
+                        <div className="space-y-1">
+                            {splitStartersAndSubs(awayTeamSelection).starters.map((player, index) => (
+                                <div
+                                    key={`away-starter-${index}`}
+                                    className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                    <span className={`text-xs font-semibold px-2 py-1 rounded-full
+                                                        ${player.position === 'GK' ? 'bg-blue-100 text-blue-800' :
                                             player.position === 'DEF' ? 'bg-green-100 text-green-800' :
                                                 player.position === 'MID' ? 'bg-yellow-100 text-yellow-800' :
                                                     player.position === 'FWD' ? 'bg-pink-100 text-pink-800' :
                                                         'bg-gray-100 text-gray-700'}
-                                                    `}>
-                                    {player.position}
-                                </span>
-                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
-                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="text-sm font-bold text-indigo-800 text-center mt-4 uppercase tracking-wide">Substitutes</div>
-                    <div className="space-y-1">
-                        {splitStartersAndSubs(homeTeamSelection).subs.map((player, index) => (
-                            <div key={`home-sub-${index}`} className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
-                                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">{player.position}</span>
-                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
-                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-
-                {/* Away Team */}
-                <div className="bg-white p-4 rounded-xl shadow space-y-4">
-                    <div className="relative">
-                        <h3 className="text-xl font-extrabold text-gray-800 tracking-tight text-center">{awayTeamName}</h3>
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-extrabold bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full">
-                            {getTotalTeamPoints(splitStartersAndSubs(awayTeamSelection).starters)}
-                        </span>
-                    </div>
-                    {/* Starters */}
-                    <div className="space-y-1">
-                        {splitStartersAndSubs(awayTeamSelection).starters.map((player, index) => (
-                            <div
-                                key={`away-starter-${index}`}
-                                className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
-                                <span className={`text-xs font-semibold px-2 py-1 rounded-full
-                                                    ${player.position === 'GK' ? 'bg-blue-100 text-blue-800' :
-                                        player.position === 'DEF' ? 'bg-green-100 text-green-800' :
-                                            player.position === 'MID' ? 'bg-yellow-100 text-yellow-800' :
-                                                player.position === 'FWD' ? 'bg-pink-100 text-pink-800' :
-                                                    'bg-gray-100 text-gray-700'}
-                                                    `}>{player.position}</span>
-                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
-                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="text-sm font-bold text-indigo-800 text-center mt-4 uppercase tracking-wide">Substitutes</div>
-                    <div className="space-y-1">
-                        {splitStartersAndSubs(awayTeamSelection).subs.map((player, index) => (
-                            <div key={`away-sub-${index}`} className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
-                                <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">{player.position}</span>
-                                <span className="text-sm font-semibold text-gray-800">{player.name}</span>
-                                <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
-                            </div>
-                        ))}
+                                                        `}>{player.position}</span>
+                                    <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                    <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-sm font-bold text-indigo-800 text-center mt-4 uppercase tracking-wide">Substitutes</div>
+                        <div className="space-y-1">
+                            {splitStartersAndSubs(awayTeamSelection).subs.map((player, index) => (
+                                <div key={`away-sub-${index}`} className="mx-auto w-full max-w-md grid grid-cols-3 text-center items-center py-2 px-4 bg-white hover:bg-gray-50 rounded shadow-sm">
+                                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">{player.position}</span>
+                                    <span className="text-sm font-semibold text-gray-800">{player.name}</span>
+                                    <span className="text-sm font-semibold text-indigo-700">{player.points} pts</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 
