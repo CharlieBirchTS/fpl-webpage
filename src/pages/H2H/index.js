@@ -13,6 +13,7 @@ const H2H = ({ currentGW, gameweekFinished, selectedManagerId, managersData, pla
     const [refreshDisabled, setRefreshDisabled] = useState(false);
     const [refreshCooldown, setRefreshCooldown] = useState(0);
 
+    // bring in the manager fixtures from the hook
     const { managerFixtures, managerFixturesLoading, managerFixturesError } = useManagerFixtures(leagueId, currentGW);
 
     ///////////////////////////////
