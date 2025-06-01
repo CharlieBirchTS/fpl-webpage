@@ -4,6 +4,7 @@ import Layout from './components/common/Layout/index';
 import Dropdown from './components/common/Dropdown/index';
 import Homepage from './pages/Home/index';
 import H2H from './pages/H2H/index';
+import H2Hv2 from './pages/H2Hv2/index';
 
 const App = () => {
   const leagueId = '10866'
@@ -84,6 +85,12 @@ const App = () => {
             leagueId={leagueId}
           />)}
           {activeSection === 'h2h' && (<H2H currentGW={currentGW}
+            gameweekFinished={gameweekFinished}
+            selectedManagerId={selectedManagerId}
+            managersData={managersData}
+            playersData={playersData}
+            leagueId={leagueId} />)}
+          {activeSection === 'h2hv2' && (<H2Hv2 currentGW={currentGW}
             gameweekFinished={gameweekFinished}
             selectedManagerId={selectedManagerId}
             managersData={managersData}

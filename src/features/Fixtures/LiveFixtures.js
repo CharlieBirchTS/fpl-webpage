@@ -2,7 +2,7 @@ import React from 'react';
 import managersData from '../../constants/manager_details.json';
 import useManagerFixtures from '../../hooks/useManagerFixtures';
 
-const LiveFixtures = ({ gameweekFinished, leagueId, currentGW }) => {
+const LiveFixtures = ({ gameweekFinished, leagueId, currentGW, onFixtureClick }) => {
     const { managerFixtures, managerFixturesLoading, managerFixturesError } = useManagerFixtures(leagueId, currentGW);
 
     // Create a lookup from entry ID to team name
@@ -71,7 +71,11 @@ const LiveFixtures = ({ gameweekFinished, leagueId, currentGW }) => {
             ) : (
                 <div className="fixtures-grid divide-y divide-gray-100">
                     {managerFixtures.map((fixture, index) => (
-                        <div className="p-4 hover:bg-gray-50 transition-colors duration-200" key={index}>
+                        <div
+                            className="p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                            key={index}
+                            onClick={() => onFixtureClick(fixture)}
+                        >
                             <div className="flex items-center justify-between max-w-3xl mx-auto">
                                 {/* Home Team */}
                                 <div className="flex-1 text-right pr-4">

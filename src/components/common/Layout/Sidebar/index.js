@@ -24,8 +24,8 @@ const Sidebar = ({
                 <button
                     onClick={() => handleMenuClick('home')}
                     className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'home'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-300 hover:bg-gray-700'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-300 hover:bg-gray-700'
                         }`}
                 >
                     Home
@@ -33,11 +33,20 @@ const Sidebar = ({
                 <button
                     onClick={() => handleMenuClick('h2h')}
                     className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'h2h'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-300 hover:bg-gray-700'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-300 hover:bg-gray-700'
                         }`}
                 >
                     H2H
+                </button>
+                <button
+                    onClick={() => handleMenuClick('h2hv2')}
+                    className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'h2h'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-300 hover:bg-gray-700'
+                        }`}
+                >
+                    H2Hv2
                 </button>
             </div>
         </div>
