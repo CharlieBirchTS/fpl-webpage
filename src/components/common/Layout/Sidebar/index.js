@@ -39,15 +39,6 @@ const Sidebar = ({
                 >
                     H2H
                 </button>
-                <button
-                    onClick={() => handleMenuClick('h2hv2')}
-                    className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 ${activeSection === 'h2h'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-700'
-                        }`}
-                >
-                    H2Hv2
-                </button>
             </div>
         </div>
     );
