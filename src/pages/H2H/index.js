@@ -85,6 +85,10 @@ const H2H = ({ currentGW, gameweekFinished, selectedManagerId, managersData, pla
                         subtitle="This is the home team"
                         isLoading={homeTeamLoading}
                         error={homeTeamError}
+                        managerId={selectedHomeId}  // Add this
+                        managersData={managersData}  // Add this
+                        currentGW={currentGW}  // Add this
+                        playersData={playersData}
                     />
                     <TeamDisplay
                         team={awayTeam}
@@ -92,6 +96,10 @@ const H2H = ({ currentGW, gameweekFinished, selectedManagerId, managersData, pla
                         subtitle="This is the away team"
                         isLoading={awayTeamLoading}
                         error={awayTeamError}
+                        managerId={selectedAwayId}  // Add this
+                        managersData={managersData}  // Add this
+                        currentGW={currentGW}  // Add this
+                        playersData={playersData}
                     />
                 </div>
                 {/* LiveFixtures in top right */}
@@ -101,6 +109,8 @@ const H2H = ({ currentGW, gameweekFinished, selectedManagerId, managersData, pla
                         gameweekFinished={gameweekFinished}
                         leagueId={leagueId}
                         onFixtureClick={handleFixtureClick}
+                        playersData={playersData}
+                        managersData={managersData}
                     />
                 </div>
             </div>

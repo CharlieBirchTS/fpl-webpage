@@ -12,10 +12,21 @@ const useManagerTeam = (managerId, managersData, currentGW, playersData, livePoi
 
         setIsLoading(true);
         try {
+            console.log("This is the managers data", managersData);
             // get the manager entry id from the managers data as id doesn't work 100% of time for team selection
             const managerEntryId = managersData.find(m => m.id === managerId)?.entry_id;
+
+            if (!managerEntryId) {
+                throw new Error('Manager not found');
+            }
+
+
             // fetch the team selection for the manager using the API
             const res = await fetch(`/api/proxy/entry/${managerEntryId}/event/${currentGW}`);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+
             const json = await res.json();
             const picks = json.picks || [];
 
@@ -46,7 +57,7 @@ const useManagerTeam = (managerId, managersData, currentGW, playersData, livePoi
         } finally {
             setIsLoading(false);
         }
-    }, [managerId, currentGW, playersData, livePoints]);
+    }, [managerId, currentGW, playersData, livePoints, managersData]);
 
     useEffect(() => {
         if (playersData?.length && Object.keys(livePoints).length) {
