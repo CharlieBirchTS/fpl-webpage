@@ -1,15 +1,15 @@
 import React from 'react';
-import managersData from '../../constants/manager_details.json';
 import useManagerFixtures from '../../hooks/useManagerFixtures';
+import FixtureRow from './FixtureRow';
 
-const LiveFixtures = ({ gameweekFinished, leagueId, currentGW, onFixtureClick }) => {
+const LiveFixtures = ({ gameweekFinished, leagueId, currentGW, onFixtureClick, playersData, managersData }) => {
     const { managerFixtures, managerFixturesLoading, managerFixturesError } = useManagerFixtures(leagueId, currentGW);
 
-    // Create a lookup from entry ID to team name
-    const entryIdToName = {};
-    managersData.league_entries.forEach(manager => {
-        entryIdToName[manager.id] = manager.entry_name;
-    });
+    // // Create a lookup from entry ID to team name
+    // const entryIdToName = {};
+    // managersData.league_entries.forEach(manager => {
+    //     entryIdToName[manager.id] = manager.entry_name;
+    // });
 
     if (managerFixturesLoading) {
         return (
@@ -57,7 +57,7 @@ const LiveFixtures = ({ gameweekFinished, leagueId, currentGW, onFixtureClick })
                     {gameweekFinished !== null && (
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${gameweekFinished
                             ? 'gameweek-finished bg-red-100 text-red-700'
-                            : 'gameweek-livebg green-100 text-green-700'
+                            : 'gameweek-live bg-green-100 text-green-700'
                             }`}>
                             {gameweekFinished ? '🔴 Gameweek Finished' : '🟢 Live Gameweek'}
                         </span>
@@ -71,36 +71,15 @@ const LiveFixtures = ({ gameweekFinished, leagueId, currentGW, onFixtureClick })
             ) : (
                 <div className="fixtures-grid divide-y divide-gray-100">
                     {managerFixtures.map((fixture, index) => (
-                        <div
-                            className="p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                        <FixtureRow
                             key={index}
-                            onClick={() => onFixtureClick(fixture)}
-                        >
-                            <div className="flex items-center justify-between max-w-3xl mx-auto">
-                                {/* Home Team */}
-                                <div className="flex-1 text-right pr-4">
-                                    <span className="font-semibold text-gray-800">
-                                        {entryIdToName[fixture.league_entry_1]}
-                                    </span>
-                                </div>
-                                {/* Scores */}
-                                <div className="flex items-center space-x-4 px-4">
-                                    <span className="text-2xl font-bold text-gray-900 min-w-[2rem] text-center">
-                                        {fixture.league_entry_1_points ?? '-'}
-                                    </span>
-                                    <span className="text-gray-400">vs</span>
-                                    <span className="text-2xl font-bold text-gray-900 min-w-[2rem] text-center">
-                                        {fixture.league_entry_2_points ?? '-'}
-                                    </span>
-                                </div>
-                                {/* Away Team */}
-                                <div className="flex-1 text-left pl-4">
-                                    <span className="font-semibold text-gray-800">
-                                        {entryIdToName[fixture.league_entry_2]}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                            fixture={fixture}
+                            // entryIdToName={entryIdToName}
+                            onFixtureClick={onFixtureClick}
+                            managersData={managersData}
+                            currentGW={currentGW}
+                            playersData={playersData}
+                        />
                     ))}
                 </div>
             )}

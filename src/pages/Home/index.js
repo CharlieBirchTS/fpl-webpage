@@ -65,7 +65,7 @@ const Homepage = ({ selectedManagerId, gameweekFinished, currentGW }) => {
 
                 {/* Live Fixtures */}
                 <div className="bg-white p-6 rounded-xl shadow">
-                    <LiveFixtures gameweekFinished={gameweekFinished} leagueId={leagueId} currentGW={currentGW} />
+                    "To be continued..."
                 </div>
             </div>
         </div>

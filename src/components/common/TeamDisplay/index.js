@@ -1,5 +1,6 @@
 // src/components/common/TeamDisplay/index.js
 import React from 'react';
+import useManagerTeamPoints from '../../../hooks/useManagerTeamPoints';
 
 const TeamDisplay = ({
     team,
@@ -10,8 +11,21 @@ const TeamDisplay = ({
     onPlayerClick, // Optional callback for player interaction
     className, // Optional additional classes
     showSubstitutes = true, // Optional flag to show/hide subs
-    showPoints = true, // Optional flag to show/hide points
+    showPoints = true,
+    managerId,
+    managersData,
+    currentGW,
+    playersData // Optional flag to show/hide points
 }) => {
+    // Get total points for the team
+    const { teamPoints } = useManagerTeamPoints(
+        managerId,
+        managersData,
+        currentGW,
+        playersData
+    );
+
+
     if (isLoading) {
         return (
             <div className={`bg-white rounded-lg shadow p-4 ${className || ''}`}>
@@ -56,7 +70,14 @@ const TeamDisplay = ({
     return (
         <div className={className}>
             <div className="mb-4">
-                <h2 className="text-xl font-semibold">{title}</h2>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold">{title}</h2>
+                    {teamPoints && (
+                        <span className="text-2xl font-bold text-gray-900">
+                            {teamPoints.totalPoints ?? '-'}
+                        </span>
+                    )}
+                </div>
                 {subtitle && (
                     <p className="text-gray-600 text-sm">{subtitle}</p>
                 )}
